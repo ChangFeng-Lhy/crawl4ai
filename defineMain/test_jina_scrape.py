@@ -19,6 +19,7 @@ SUMMARY_LLM_API_KEY = "sk-12211028bd184bef817cb898de4efb9e"  # 千问API密钥
 JINA_BASE_URL = "https://r.jina.ai"  # Jina API基础URL(可选)
 
 TARGET_URL = "https://www.nbcnews.com/politics/immigration/immigrant-deaths-custody-grow-ice-reduces-details-are-made-public-rcna331852"
+TARGET_URL = "https://blog.csdn.net/2402_83696437/article/details/145090788"
 
 EXTRACT_PROMPT = "提取出里面的文章 过滤掉里面不相关的广告或者其他部分 不要修改文章的任何内容"
 

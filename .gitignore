@@ -1,6 +1,9 @@
 # Scripts folder (private tools)
 .scripts/
 
+# Result folder (crawl results)
+result/
+
 # Database files
 *.db
 
@@ -302,5 +305,3 @@ MEMORY.md
 
 # Handoff files
 HANDOFF-*.md
-
-./result

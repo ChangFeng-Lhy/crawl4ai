@@ -1,7 +1,3 @@
-"""
-Crawl4AI 基础爬虫示例
-展示如何使用 AsyncWebCrawler 进行基本的网页爬取和 LLM 提取
-"""
 import asyncio
 import json
 import os
@@ -12,13 +8,11 @@ from pydantic import BaseModel, Field
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode, LLMConfig
 from crawl4ai.extraction_strategy import LLMExtractionStrategy
 from flask import Flask, jsonify,request
-from colorama import Fore, Style, init
 from logger import setup_logger
-
+# .\chrome.exe --remote-debugging-port=9222 --user-data-dir="C:\temp\chrome-profile"
 try:
     logger = setup_logger()
     app = Flask(__name__)
-    logger.info(f"{Fore.GREEN}🚀 启动爬虫服务...{Style.RESET_ALL}")
 except Exception as e:
     print(f"Error loading .env file: {e}")
 
@@ -86,7 +80,20 @@ async def llm_extraction(target_url):
             instruction="从页面内容中提取文章的完整标题和完整正文内容。要求：1) 标题要准确完整；2) 正文内容要保持原文的所有细节和信息，不要删减、总结或改写，完整保留文章内容；3) 过滤掉广告、导航、页脚等无关内容；4) tags 提取文章的主要话题标签。"
         )
         
-        browser_config = BrowserConfig(headless=True, verbose=False)
+        # browser_config = BrowserConfig(headless=True, verbose=False)
+        
+        browser_config = BrowserConfig(
+            headless=True, 
+            verbose=False,
+            browser_mode='cdp',
+            browser_type="chromium",# 指定浏览器内核: "chromium", "firefox", "webkit"
+            use_managed_browser=False,
+            channel="chrome",
+            cdp_url='http://127.0.0.1:9222',
+            ignore_https_errors=True, # 忽略 HTTPS 证书错误
+            java_script_enabled=True, # 启用 JavaScript
+        )
+        
         run_config = CrawlerRunConfig(
             extraction_strategy=extraction_strategy,
             cache_mode=CacheMode.BYPASS,
