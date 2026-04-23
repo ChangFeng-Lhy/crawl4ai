@@ -85,16 +85,5 @@ if __name__ == "__main__":
     # 在 Windows 上需要设置事件循环策略
     if sys.platform == 'win32':
         asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-    # browser_config = BrowserConfig(
-    #     headless=True, 
-    #     verbose=False,
-    #     browser_mode='cdp',
-    #     browser_type="chromium",# 指定浏览器内核: "chromium", "firefox", "webkit"
-    #     use_managed_browser=False,
-    #     channel="chrome",
-    #     cdp_url='http://127.0.0.1:9222',
-    #     ignore_https_errors=True, # 忽略 HTTPS 证书错误
-    #     java_script_enabled=True, # 启用 JavaScript
-    # )
     success = asyncio.run(test_cdp_connection())
     sys.exit(0 if success else 1)

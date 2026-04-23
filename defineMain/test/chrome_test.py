@@ -9,7 +9,4 @@ async def test_driver():
         await browser.close()
 
 if __name__ == "__main__":
-    import playwright
-    import os
-    print(os.path.dirname(playwright.__file__))
     asyncio.run(test_driver())

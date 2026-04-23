@@ -60,9 +60,7 @@ def start_chrome():
             cmd = [
                 chrome_exe,
                 f"--remote-debugging-port={port}",
-                f'--user-data-dir="{user_data_dir}"',
-                '--disable-extensions',
-                '--no-first-run'
+                f'--user-data-dir={user_data_dir}',
             ]
             try:
                 # 启动Chrome
@@ -83,5 +81,5 @@ def start_chrome():
 
 
 # # 使用示例
-# if __name__ == "__main__":
-#     start_chrome()
+if __name__ == "__main__":
+    start_chrome()
