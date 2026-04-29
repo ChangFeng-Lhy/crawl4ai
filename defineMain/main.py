@@ -9,6 +9,9 @@ from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
 from crawl4ai.extraction_strategy import LLMExtractionStrategy
 from flask import Flask, jsonify,request
 from logger import setup_logger
+from chrome_start import start_chrome
+
+
 # .\chrome.exe --remote-debugging-port=9222 --user-data-dir="C:\temp\chrome-profile"
 try:
     logger = setup_logger()
@@ -64,7 +67,7 @@ async def llm_extraction(target_url):
     
     if not api_key:
         result_data["error"] = "DASHSCOPE_API_KEY 未设置"
-        logger.error(f"❌ {result_data['error']}")
+        logger.error(f"{result_data['error']}")
         return result_data
     
     try:
@@ -100,7 +103,7 @@ async def llm_extraction(target_url):
             word_count_threshold=100
         )
         
-        logger.info("🚀 开始使用 Qwen-Plus 提取数据...")
+        logger.info("开始使用 Qwen-Plus 提取数据...")
         
         async with AsyncWebCrawler(config=browser_config) as crawler:
             result = await crawler.arun(
@@ -126,18 +129,18 @@ async def llm_extraction(target_url):
             # 如果需要精确的 token 统计，可能需要从 LLM 响应中解析
             result_data["tokens_used"] = 0  # 暂时设为 0
             
-            logger.info("✅ 提取成功!")
-            logger.info(f"📊 内容长度: {total_char_count:,} 字符")
-            logger.info(f"📄 行数: {total_line_count:,}")
+            logger.info("提取成功!")
+            logger.info(f"内容长度: {total_char_count:,} 字符")
+            logger.info(f"行数: {total_line_count:,}")
             logger.info(f"\n提取的结构化数据:")
             logger.info(result_data["extracted_info"])
         else:
             result_data["error"] = f"Scraping failed: {result.error_message}"
-            logger.error(f"❌ {result_data['error']}")
+            logger.error(f"{result_data['error']}")
             
     except Exception as e:
         result_data["error"] = f"Scraping failed (both Jina and Python): {str(e)}"
-        logger.error(f"❌ {result_data['error']}")
+        logger.error(f"{result_data['error']}")
         import traceback
         traceback.print_exc()
     
@@ -152,10 +155,10 @@ def save_result_to_file(result_data: dict, filename: str = None):
     try:
         with open(filename, 'w', encoding='utf-8') as f:
             json.dump(result_data, f, ensure_ascii=False, indent=2)
-        logger.info(f"\n💾 结果已保存到: {filename}")
+        logger.info(f"\n结果已保存到: {filename}")
         return filename
     except Exception as e:
-        logger.error(f"❌ 保存文件失败: {e}")
+        logger.error(f"保存文件失败: {e}")
         return None
 
 @app.route("/")
@@ -167,6 +170,7 @@ def hello():
 async def get_data():
     link= request.args.get("link", "https://www.bbc.com/zhongwen/articles/cx231dzr384o/simp")
     logger.info(link)
+    start_chrome()
     result = await llm_extraction(link)
     return jsonify(result)
 

@@ -1,7 +1,9 @@
 import winreg
 import os
 import subprocess
+from logger import setup_logger
 
+logger = setup_logger()
 def get_installed_apps_with_locations():
     """
     获取Windows系统中已安装的应用程序列表及其安装位置
@@ -45,7 +47,16 @@ def get_installed_apps_with_locations():
     
     return apps
 
+def kill_process(process_name):
+    try:
+        subprocess.run(["taskkill", "/F", "/IM", process_name])
+        return True
+    except Exception as e:
+        logger.error(f"Error killing {process_name}: {e}")
+        return False
+
 def start_chrome():
+    kill_process("chrome.exe")
     installed_apps = get_installed_apps_with_locations()
     
     # print(f"找到 {len(installed_apps)} 个已安装应用：")
@@ -53,7 +64,7 @@ def start_chrome():
         if name == "Google Chrome":
             # print(f"{name} (Google Chrome) {location}")
             chrome_exe = os.path.join(location, "chrome.exe")
-            print(f"Chrome路径: {chrome_exe}")
+            logger.info(f"Chrome路径: {chrome_exe}")
             user_data_dir = os.path.join(os.getcwd(),"result")
             os.makedirs(user_data_dir, exist_ok=True)
             port = 9222
@@ -71,15 +82,15 @@ def start_chrome():
                     text=True
                 )
                 
-                print(f"Chrome已启动，进程ID: {process.pid}")
-                print(f"远程调试地址: http://localhost:{port}")
+                logger.info(f"Chrome已启动，进程ID: {process.pid}")
+                logger.info(f"远程调试地址: http://localhost:{port}")
                 
-                # return process
+                return True
             except Exception as e:
-                print(f"启动Chrome失败: {e}")
-                # return None
+                logger.error(f"启动Chrome失败: {e}")
+                return False
 
-
-# # 使用示例
+# 使用示例
 if __name__ == "__main__":
     start_chrome()
+    # kill_process("chrome.exe")

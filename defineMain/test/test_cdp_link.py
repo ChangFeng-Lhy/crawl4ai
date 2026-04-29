@@ -58,7 +58,7 @@ async def test_cdp_connection(cdp_url: str = "http://127.0.0.1:9222"):
                             except:
                                 print(f"     · 页面 {j}: <无法获取信息>")
                 else:
-                    print("   ℹ️  没有活动的上下文")
+                    print(" 没有活动的上下文")
                 
                 # 第五步：创建新页面测试
                 print("\n✅ 步骤 5: 创建测试页面...")
