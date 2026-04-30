@@ -303,5 +303,6 @@ scripts/
 *.ldb
 MEMORY.md
 
+defineMain/driver
 # Handoff files
 HANDOFF-*.md

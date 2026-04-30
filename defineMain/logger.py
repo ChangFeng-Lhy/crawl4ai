@@ -3,6 +3,9 @@ import os
 import sys
 from datetime import datetime
 
+# TEMP_CRAWL_DIR = os.path.join(os.getcwd(), '.c4ai_temp')
+# os.environ['CRAWL4_AI_BASE_DIRECTORY'] = TEMP_CRAWL_DIR
+
 
 def setup_logger(
     name: str = "crawl4ai",
