@@ -361,7 +361,7 @@ async def extract_info_with_llm(
             "tokens_used": 0,
         }
 
-async def cell_llm_summary(link:str):
+async def cell_llm_summary(link:str,info_to_extract:str):
     # result_data = {
     #     "success": False,
     #     "url": link,
@@ -375,10 +375,13 @@ async def cell_llm_summary(link:str):
     crawl_data  = await basic_crawl(link)
     basic_result = crawl_data["markdown"]
 
+    if info_to_extract == "":
+        info_to_extract = EXTRACT_PROMPT
+
     llm_result = await extract_info_with_llm(
                             url=link,
                             content=basic_result, 
-                            info_to_extract=EXTRACT_PROMPT, 
+                            info_to_extract=info_to_extract, 
                             model=SUMMARY_LLM_MODEL_NAME, 
                             max_tokens=8192)
     llm_result["scrape_stats"] = crawl_data["stats"]

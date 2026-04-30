@@ -58,6 +58,7 @@ def hello():
 @run_async
 async def get_data():
     link= request.args.get("link", "")
+    info_to_extract = request.args.get("info_to_extract", "")
 
     if link == "":
         result_data = {
@@ -73,7 +74,7 @@ async def get_data():
         return jsonify(result_data)
     logger.info(link)
     start_chrome()
-    result = await cell_llm_summary(link)
+    result = await cell_llm_summary(link=link,info_to_extract=info_to_extract)
     kill_process("chrome.exe")
     return jsonify(result)
 
