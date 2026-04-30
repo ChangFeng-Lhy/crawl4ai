@@ -56,7 +56,6 @@ def kill_process(process_name):
         return False
 
 def start_chrome():
-    kill_process("chrome.exe")
     installed_apps = get_installed_apps_with_locations()
     
     # print(f"找到 {len(installed_apps)} 个已安装应用：")

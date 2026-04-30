@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import sys
 import functools
 from datetime import datetime
 from dotenv import load_dotenv
@@ -9,13 +10,28 @@ from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
 from crawl4ai.extraction_strategy import LLMExtractionStrategy
 from flask import Flask, jsonify,request
 from logger import setup_logger
-from chrome_start import start_chrome
+from chrome_start import kill_process, start_chrome
 
+
+# 设置默认编码为 UTF-8
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
 
 # .\chrome.exe --remote-debugging-port=9222 --user-data-dir="C:\temp\chrome-profile"
 try:
     logger = setup_logger()
     app = Flask(__name__)
+    
+    # 配置 Flask 使用 UTF-8 编码
+    app.config['JSON_AS_ASCII'] = False
+    app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
+    
+    # 设置响应的字符集为 UTF-8
+    @app.after_request
+    def set_content_type(response):
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        return response
 except Exception as e:
     print(f"Error loading .env file: {e}")
 
@@ -168,13 +184,25 @@ def hello():
 @app.route("/api/search")
 @run_async
 async def get_data():
-    link= request.args.get("link", "https://www.bbc.com/zhongwen/articles/cx231dzr384o/simp")
+    link= request.args.get("link", "")
+
+    if link == "":
+        result_data = {
+            "success": False,
+            "url": "",
+            "extracted_info": "",
+            "error": "",
+            "scrape_stats": {},
+            "model_used": "qwen-plus",
+            "tokens_used": 0
+        }
+        result_data["error"] = "请输入链接"
+        return jsonify(result_data)
     logger.info(link)
     start_chrome()
     result = await llm_extraction(link)
+    kill_process("chrome.exe")
     return jsonify(result)
-
-
 
 if __name__ == "__main__":
     app.run(host="localhost", port=5000, debug=False)

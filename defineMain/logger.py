@@ -1,12 +1,13 @@
 import logging
 import os
+import sys
 from datetime import datetime
 
 
 def setup_logger(
     name: str = "crawl4ai",
     log_level: int = logging.INFO,
-    log_dir: str = "logs",
+    log_dir: str = "logs\\crawl4ai",
     log_file: str = None,
 ) -> logging.Logger:
     """
@@ -46,9 +47,12 @@ def setup_logger(
     )
     
     # 1. 控制台 Handler
-    console_handler = logging.StreamHandler()
+    console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(log_level)
     console_handler.setFormatter(formatter)
+    # 设置控制台编码为 UTF-8
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8')
     logger.addHandler(console_handler)
     
     # 2. 文件 Handler
