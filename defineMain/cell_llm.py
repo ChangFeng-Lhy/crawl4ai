@@ -197,127 +197,93 @@ async def extract_info_with_llm(
         headers["Authorization"] = f"Bearer {SUMMARY_LLM_API_KEY}"
 
     try:
-        # Retry configuration
-        connect_retry_delays = [1, 2, 4, 8]
+        logger.info(f"开始请求用于总结的大模型......")
+        
+        async with httpx.AsyncClient(trust_env=False) as client:
+            response = await client.post(
+                SUMMARY_LLM_BASE_URL,
+                headers=headers,
+                json=payload,
+                timeout=httpx.Timeout(None, connect=30, read=300),
+            )
 
-        for attempt, delay in enumerate(connect_retry_delays, 1):
-            try:
-                logger.info(f"开始请求用于总结的大模型......")
-                
-                async with httpx.AsyncClient(trust_env=False) as client:
-                    response = await client.post(
-                        SUMMARY_LLM_BASE_URL,
-                        headers=headers,
-                        json=payload,
-                        timeout=httpx.Timeout(None, connect=30, read=300),
-                    )
+        logger.info("请求完成")
+        # Check if the request was successful
+        if (
+            "Requested token count exceeds the model's maximum context length"
+            in response.text
+            or "longer than the model's context length" in response.text
+        ):
+            error_msg = "请求的 token 数量超过模型的最大上下文长度"
+            logger.error(error_msg)
+            return {
+                "success": False,
+                "extracted_info": "",
+                "error": error_msg,
+                "model_used": model,
+                "tokens_used": 0,
+            }
 
-                    if response.text and len(response.text) >= 50:
-                        tail_50 = response.text[-50:]
-                        repeat_count = response.text.count(tail_50)
-                        if repeat_count > 5:
-                            logger.info("在响应中存在过多的重复内容，尝试重新请求")
-                            continue
+        response.raise_for_status()
 
-                # Check if the request was successful
-                if (
-                    "Requested token count exceeds the model's maximum context length"
-                    in response.text
-                    or "longer than the model's context length" in response.text
-                ):
-                    prompt = get_prompt_with_truncation(
-                        info_to_extract,
-                        content,
-                        truncate_last_num_chars=40960 * attempt,
-                    )  # remove 40k * num_attempts chars from the end of the content
-                    payload["messages"][0]["content"] = prompt
-                    continue  # no need to raise error here, just try again
+    except httpx.ConnectTimeout as e:
+        error_msg = f"连接超时: {str(e)}"
+        logger.error(error_msg)
+        return {
+            "success": False,
+            "extracted_info": "",
+            "error": error_msg,
+            "model_used": model,
+            "tokens_used": 0,
+        }
 
-                response.raise_for_status()
-                break  # Success, exit retry loop
+    except httpx.ConnectError as e:
+        error_msg = f"连接错误: {str(e)}"
+        logger.error(error_msg)
+        return {
+            "success": False,
+            "extracted_info": "",
+            "error": error_msg,
+            "model_used": model,
+            "tokens_used": 0,
+        }
 
-            except httpx.ConnectTimeout as e:
-                # connection timeout, retry
-                if attempt < len(connect_retry_delays):
-                    logger.info(
-                        f"Jina Scrape and Extract Info: Connection timeout, {delay}s before next attempt (attempt {attempt + 1})"
-                    )
-                    await asyncio.sleep(delay)
-                    continue
-                else:
-                    logger.error(
-                        "Jina Scrape and Extract Info: Connection retry attempts exhausted"
-                    )
-                    raise e
+    except httpx.ReadTimeout as e:
+        error_msg = f"读取超时: {str(e)}"
+        logger.error(error_msg)
+        return {
+            "success": False,
+            "extracted_info": "",
+            "error": error_msg,
+            "model_used": model,
+            "tokens_used": 0,
+        }
 
-            except httpx.ConnectError as e:
-                # connection error, retry
-                if attempt < len(connect_retry_delays):
-                    logger.info(
-                        f"Jina Scrape and Extract Info: Connection error: {e}, {delay}s before next attempt"
-                    )
-                    await asyncio.sleep(delay)
-                    continue
-                else:
-                    logger.error(f"连接重试超过最大尝试次数")
-                    raise e
+    except httpx.HTTPStatusError as e:
+        status_code = e.response.status_code
+        error_msg = f"HTTP 错误 {status_code}: {str(e)}"
+        logger.error(error_msg)
+        return {
+            "success": False,
+            "extracted_info": "",
+            "error": error_msg,
+            "model_used": model,
+            "tokens_used": 0,
+        }
 
-            except httpx.ReadTimeout as e:
-                # read timeout, LLM API is too slow, no need to retry
-                if attempt < len(connect_retry_delays):
-                    logger.info(
-                        f"Jina Scrape and Extract Info: LLM API attempt {attempt} read timeout"
-                    )
-                    continue
-                else:
-                    logger.error(
-                        f"Jina Scrape and Extract Info: LLM API read timeout retry attempts exhausted, please check the request complexity, information to extract: {info_to_extract}, length of content: {len(content)}, url: {url}"
-                    )
-                    raise e
-
-            except httpx.HTTPStatusError as e:
-                status_code = e.response.status_code
-
-                # Special case: GPT-5 service_tier parameter compatibility issue
-                if (
-                    "gpt-5" in model.lower() or "gpt5" in model.lower()
-                ) and "service_tier" in payload:
-                    logger.info(
-                        "Extract Info: GPT-5 service_tier error, removing and retrying"
-                    )
-                    payload.pop("service_tier", None)
-                    if attempt < len(connect_retry_delays):
-                        await asyncio.sleep(delay)
-                        continue
-
-                # Retryable: 5xx (server errors) + specific 4xx (408, 409, 425, 429)
-                should_retry = status_code >= 500 or status_code in [408, 409, 425, 429]
-
-                if should_retry and attempt < len(connect_retry_delays):
-                    logger.info(
-                        f"Extract Info: HTTP {status_code} (retryable), retry in {delay}s"
-                    )
-                    await asyncio.sleep(delay)
-                    continue
-                elif should_retry:
-                    logger.error(f"Extract Info: HTTP {status_code} retry exhausted")
-                    raise e
-                else:
-                    logger.error(f"Extract Info: HTTP {status_code} (non-retryable)")
-                    raise httpx.HTTPStatusError(
-                        f"response.text: {response.text}",
-                        request=e.request,
-                        response=e.response,
-                    ) from e
-
-            except httpx.RequestError as e:
-                logger.error(
-                    f"Jina Scrape and Extract Info: Unknown request exception: {e}"
-                )
-                raise e
+    except httpx.RequestError as e:
+        error_msg = f"请求错误: {str(e)}"
+        logger.error(error_msg)
+        return {
+            "success": False,
+            "extracted_info": "",
+            "error": error_msg,
+            "model_used": model,
+            "tokens_used": 0,
+        }
 
     except Exception as e:
-        error_msg = f"Jina Scrape and Extract Info: Unexpected error during LLM API call: {str(e)}"
+        error_msg = f"crawl4ai and Extract Info: Unexpected error during LLM API call: {str(e)}"
         logger.error(error_msg)
         return {
             "success": False,
@@ -333,7 +299,7 @@ async def extract_info_with_llm(
 
     except json.JSONDecodeError as e:
         error_msg = (
-            f"Jina Scrape and Extract Info: Failed to parse LLM API response: {str(e)}"
+            f"crawl4ai and Extract Info: Failed to parse LLM API response: {str(e)}"
         )
         logger.error(error_msg)
         logger.error(f"Raw response: {response.text}")
@@ -350,7 +316,7 @@ async def extract_info_with_llm(
         try:
             summary = response_data["choices"][0]["message"]["content"]
         except Exception as e:
-            error_msg = f"Jina Scrape and Extract Info: Failed to get summary from LLM API response: {str(e)}"
+            error_msg = f"crawl4ai and Extract Info: Failed to get summary from LLM API response: {str(e)}"
             logger.error(error_msg)
             return {
                 "success": False,
@@ -374,7 +340,7 @@ async def extract_info_with_llm(
         }
     elif "error" in response_data:
         error_msg = (
-            f"Jina Scrape and Extract Info: LLM API error: {response_data['error']}"
+            f"crawl4ai and Extract Info: LLM API error: {response_data['error']}"
         )
         logger.error(error_msg)
         return {
@@ -385,7 +351,7 @@ async def extract_info_with_llm(
             "tokens_used": 0,
         }
     else:
-        error_msg = f"Jina Scrape and Extract Info: No valid response from LLM API, response data: {response_data}"
+        error_msg = f"crawl4ai and Extract Info: No valid response from LLM API, response data: {response_data}"
         logger.error(error_msg)
         return {
             "success": False,

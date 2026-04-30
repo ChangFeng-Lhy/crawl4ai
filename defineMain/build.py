@@ -64,7 +64,7 @@ def build_exe():
         # 添加数据文件
         f"--add-data={project_root}/defineMain/logger.py;defineMain",
         # 添加 playwright 目录的驱动
-        # "--add-data=E:\\code\\ai\\crawl4ai\\.venv\\Lib\\site-packages\\playwright\\driver;playwright/driver",
+        "--add-data=E:\\code\\ai\\crawl4ai\\.venv\\Lib\\site-packages\\playwright\\driver;playwright/driver",
         "--add-data=E:\\code\\ai\\crawl4ai\\crawl4ai\\js_snippet;crawl4ai/js_snippet",
         "--add-data=E:\\code\\ai\\crawl4ai\\.venv\\Lib\\site-packages\\litellm\\model_prices_and_context_window_backup.json;litellm",
         # 添加 model_prices 文件

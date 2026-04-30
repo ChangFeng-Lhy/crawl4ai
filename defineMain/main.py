@@ -78,6 +78,6 @@ async def get_data():
     return jsonify(result)
 
 if __name__ == "__main__":
-    setup_playwright_env()
+    # setup_playwright_env()
     app.run(host="localhost", port=5000, debug=False)
 
