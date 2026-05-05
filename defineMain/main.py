@@ -11,7 +11,7 @@ from flask import Flask, jsonify,request
 from cell_llm import cell_llm_summary
 from start_functions import kill_process, setup_playwright_env, start_chrome
 from logger import setup_logger
-
+from flask_cors import CORS 
 
 # 设置默认编码为 UTF-8
 if sys.platform == 'win32':
@@ -22,7 +22,7 @@ if sys.platform == 'win32':
 try:
     logger = setup_logger()
     app = Flask(__name__)
-    
+    CORS(app, origins=["http://localhost:5173"])
     # 配置 Flask 使用 UTF-8 编码
     app.config['JSON_AS_ASCII'] = False
     app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
@@ -50,14 +50,14 @@ class ArticleInfo(BaseModel):
 class ChatData:
     pass
 
-class ChatResponse(BaseModel):
+class ChatResponse:
     code: int = 1
     msg: str
     data: ChatData = ChatData()
 
 class HealthData():
     port: int = 5000
-
+    version: str = "26.05.05.01"
 @app.route("/")
 def hello():
     return "Hello World!"
@@ -88,12 +88,16 @@ async def get_data():
     return jsonify(result)
 
 @app.get("/api/heartbeat")
+@run_async
 async def heartbeat():
-    return ChatResponse(
-        code=0,
-        msg="success",
-        data=HealthData(port=5000),
-    )
+    return jsonify({
+        "code":0,
+        "msg":"success",
+        "data":{
+            "port": 5000,
+            "version": "26.05.05.01",
+        }
+    })
 
 if __name__ == "__main__":
     # setup_playwright_env()
