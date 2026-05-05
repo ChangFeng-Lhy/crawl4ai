@@ -42,13 +42,21 @@ def run_async(func):
         return asyncio.run(func(*args, **kwargs))
     return wrapper
 
-
 class ArticleInfo(BaseModel):
     title: str = Field(..., description="文章标题")
     content: str = Field(..., description="文章的完整内容，保持原文的所有细节和信息，不要删减或总结")
     tags: list[str] = Field(default_factory=list, description="文章标签列表")
 
+class ChatData:
+    pass
 
+class ChatResponse(BaseModel):
+    code: int = 1
+    msg: str
+    data: ChatData = ChatData()
+
+class HealthData():
+    port: int = 5000
 
 @app.route("/")
 def hello():
@@ -59,6 +67,7 @@ def hello():
 async def get_data():
     link= request.args.get("link", "")
     info_to_extract = request.args.get("info_to_extract", "")
+    use_jina = request.args.get("use_jina", False)
 
     if link == "":
         result_data = {
@@ -74,9 +83,17 @@ async def get_data():
         return jsonify(result_data)
     logger.info(link)
     start_chrome()
-    result = await cell_llm_summary(link=link,info_to_extract=info_to_extract)
+    result = await cell_llm_summary(link=link,info_to_extract=info_to_extract,use_jina=use_jina)
     kill_process("chrome.exe")
     return jsonify(result)
+
+@app.get("/api/heartbeat")
+async def heartbeat():
+    return ChatResponse(
+        code=0,
+        msg="success",
+        data=HealthData(port=5000),
+    )
 
 if __name__ == "__main__":
     # setup_playwright_env()
