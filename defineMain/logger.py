@@ -14,13 +14,13 @@ def setup_logger(
     log_file: str = None,
 ) -> logging.Logger:
     """
-    创建并配置一个日志记录器，同时输出到控制台和文件
+    创建并配置一个日志记录器,同时输出到控制台和文件
     
     Args:
         name: 日志记录器名称
         log_level: 日志级别 (DEBUG, INFO, WARNING, ERROR, CRITICAL)
         log_dir: 日志文件目录
-        log_file: 日志文件名，如果为None则自动生成带时间戳的文件名
+        log_file: 日志文件名,如果为None则自动生成带时间戳的文件名
     
     Returns:
         配置好的 Logger 实例
@@ -68,14 +68,14 @@ def setup_logger(
 
 
 # 创建默认的全局 logger 实例
-# logger = setup_logger()
+logger = setup_logger()
 
 
-# if __name__ == "__main__":
-#     # 测试日志
-#     # test_logger = setup_logger("test_app")
-#     logger.debug("这是一条调试信息")
-#     logger.info("这是一条普通信息")
-#     logger.warning("这是一条警告信息")
-#     logger.error("这是一条错误信息")
-#     logger.critical("这是一条严重错误信息")
+if __name__ == "__main__":
+    # 测试日志
+    # test_logger = setup_logger("test_app")
+    logger.debug("这是一条调试信息")
+    logger.info("这是一条普通信息")
+    logger.warning("这是一条警告信息")
+    logger.error("这是一条错误信息")
+    logger.critical("这是一条严重错误信息")

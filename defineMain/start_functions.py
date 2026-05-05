@@ -85,6 +85,7 @@ def start_chrome():
                 chrome_exe,
                 f"--remote-debugging-port={port}",
                 f'--user-data-dir={user_data_dir}',
+                # '--headless=new',  # 使用新版无头模式，不显示窗口
             ]
             try:
                 # 启动Chrome
@@ -92,7 +93,8 @@ def start_chrome():
                     cmd,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
-                    text=True
+                    text=True,
+                    # creationflags=subprocess.CREATE_NO_WINDOW  # Windows下隐藏控制台窗口
                 )
                 
                 logger.info(f"Chrome已启动，进程ID: {process.pid}")
